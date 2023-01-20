@@ -6,12 +6,12 @@ variable "client_id" {}
 
 variable "client_secret" {}
 
-variable "resource_group_location" {
-  default     = "eastus"
-  description = "Location of the resource group."
+variable "location" {
+  default     = "centralindia"
+  description = "location set to centralindia for cost-effectiveness"
 }
 
-variable "resource_group_name_prefix" {
-  default     = "rg-youcef"
-  description = "Prefix of the resource group name that's combined with a random ID so name is unique in your Azure subscription."
+variable "environment" {
+  default     = "dev"
+  description = "this variable is used to track environment: dev or prod"
 }
