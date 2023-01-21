@@ -1,10 +1,16 @@
-variable "subscription_id" {}
+variable "azure_subscription_id" {}
 
-variable "tenant_id" {}
+variable "azure_tenant_id" {}
 
-variable "client_id" {}
+variable "azure_client_id" {}
 
-variable "client_secret" {}
+variable "azure_client_secret" {}
+
+variable "namecheap_user_name" {}
+
+variable "namecheap_api_user" {}
+
+variable "namecheap_api_key" {}
 
 variable "location" {
   default     = "centralindia"
