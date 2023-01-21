@@ -3,31 +3,130 @@ resource "azurerm_resource_group" "NetworkWatcherRG" {
   name     = "NetworkWatcherRG"
 }
 
-resource "azurerm_resource_group" "orders-loadbalancer-public-ip-rg" {
-  location = var.location
-  name     = join("-", [var.location, var.environment, "orders-loadbalancer-public-ip-rg"])
-}
-
-resource "azurerm_public_ip" "orders-loadbalancer-public-ip" {
-  name                = join("-", [var.location, var.environment, "orders-loadbalancer-public-ip"])
-  resource_group_name = azurerm_resource_group.orders-loadbalancer-public-ip-rg.name
+resource "azurerm_network_watcher" "NetworkWatcher" {
+  name                = join("-", [var.location, var.environment, "NetworkWatcher"])
   location            = var.location
-  allocation_method   = "Static"
+  resource_group_name = azurerm_resource_group.NetworkWatcherRG.name
 }
 
-resource "azurerm_resource_group" "orders-loadbalancer-vm-rg" {
+resource "azurerm_resource_group" "orders-rg" {
   location = var.location
-  name     = join("-", [var.location, var.environment, "orders-loadbalancer-vm-rg"])
-}
-
-resource "azurerm_resource_group" "youcef-key-rg" {
-  location = var.location
-  name     = join("-", [var.location, var.environment, "youcef-key-rg"])
+  name     = join("-", [var.location, var.environment, "orders-rg"])
 }
 
 resource "azurerm_ssh_public_key" "youcef-key" {
   name                = "youcef-key"
-  resource_group_name = azurerm_resource_group.youcef-key-rg.name
-  location            = var.location
   public_key          = file("~/.ssh/id_rsa.pub")
+  location            = var.location
+  resource_group_name = azurerm_resource_group.orders-rg.name
+}
+
+resource "azurerm_virtual_network" "orders-loadbalancer-vnet" {
+  name                = join("-", [var.location, var.environment, "orders-loadbalancer-vnet"])
+  address_space       = ["10.0.0.0/16"]
+  location            = var.location
+  resource_group_name = azurerm_resource_group.orders-rg.name
+}
+
+resource "azurerm_subnet" "orders-loadbalancer-vnet-subnet01" {
+  name                 = join("-", [var.location, var.environment, "orders-loadbalancer-vnet-subnet01"])
+  virtual_network_name = azurerm_virtual_network.orders-loadbalancer-vnet.name
+  address_prefixes     = ["10.0.0.0/24"]
+  resource_group_name  = azurerm_resource_group.orders-rg.name
+}
+
+resource "azurerm_network_security_group" "orders-nsg01" {
+  name                = join("-", [var.location, var.environment, "orders-nsg01"])
+  location            = var.location
+  resource_group_name = azurerm_resource_group.orders-rg.name
+
+  security_rule {
+    name                       = "SSH"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "HTTP"
+    priority                   = 101
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "80"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "HTTPS"
+    priority                   = 102
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "443"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+resource "azurerm_public_ip" "orders-loadbalancer-vm-public-ip" {
+  name                = join("-", [var.location, var.environment, "orders-loadbalancer-vm-public-ip"])
+  allocation_method   = "Static"
+  domain_name_label   = "youcefstore"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.orders-rg.name
+}
+
+resource "azurerm_network_interface" "orders-loadbalancer-vm-public-nic" {
+  name                = join("-", [var.location, var.environment, "orders-loadbalancer-vm-public-nic"])
+  location            = var.location
+  resource_group_name = azurerm_resource_group.orders-rg.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.orders-loadbalancer-vnet-subnet01.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.orders-loadbalancer-vm-public-ip.id
+  }
+}
+
+resource "azurerm_network_interface_security_group_association" "nsgA1" {
+  network_interface_id      = azurerm_network_interface.orders-loadbalancer-vm-public-nic.id
+  network_security_group_id = azurerm_network_security_group.orders-nsg01.id
+}
+
+resource "azurerm_linux_virtual_machine" "orders-loadbalancer-vm" {
+  name                = join("-", [var.location, var.environment, "orders-loadbalancer-vm"])
+  location            = var.location
+  resource_group_name = azurerm_resource_group.orders-rg.name
+  size                = "Standard_B1s"
+  admin_username      = "youcef"
+  network_interface_ids = [
+    azurerm_network_interface.orders-loadbalancer-vm-public-nic.id,
+  ]
+
+  admin_ssh_key {
+    username   = "youcef"
+    public_key = azurerm_ssh_public_key.youcef-key.public_key
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Premium_LRS"
+  }
+
+  source_image_reference {
+    publisher = "canonical"
+    offer     = "UbuntuServer"
+    sku       = "16.04-LTS"
+    version   = "latest"
+  }
 }
