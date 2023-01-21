@@ -7,25 +7,26 @@ terraform {
       version = "~>2.0"
     }
     namecheap = {
-      source = "namecheap/namecheap"
+      source  = "namecheap/namecheap"
       version = ">= 2.0.0"
+    }
   }
 }
 
 provider "azurerm" {
   features {}
 
-  subscription_id = var.subscription_id
-  tenant_id       = var.tenant_id
-  client_id       = var.client_id
-  client_secret   = var.client_secret
+  subscription_id = var.azure_subscription_id
+  tenant_id       = var.azure_tenant_id
+  client_id       = var.azure_client_id
+  client_secret   = var.azure_client_secret
 }
 
-//namecheap api is unfortunatly too expensive.
-/*
+//NameCheap api is unfortunatly too expensive.
+//We're using their sandbox..
 provider "namecheap" {
-  user_name = "user"
-  api_user = "user"
-  api_key = "key"
+  user_name   = var.namecheap_user_name
+  api_user    = var.namecheap_api_user
+  api_key     = var.namecheap_api_key
+  use_sandbox = true
 }
-*/

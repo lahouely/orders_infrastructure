@@ -3,4 +3,4 @@ This repository hosts the terraform source code that will deploy the necessary A
 
 It also hosts the namecheap DNS configuration code.
 
-Edit: unfortunatly namecheap api costs 50$.
+Edit: unfortunatly namecheap api costs 50$. we use their sandbox instead.
