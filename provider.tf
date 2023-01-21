@@ -6,10 +6,9 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~>2.0"
     }
-    random = {
-      source  = "hashicorp/random"
-      version = "~>3.0"
-    }
+    namecheap = {
+      source = "namecheap/namecheap"
+      version = ">= 2.0.0"
   }
 }
 
@@ -21,3 +20,12 @@ provider "azurerm" {
   client_id       = var.client_id
   client_secret   = var.client_secret
 }
+
+//namecheap api is unfortunatly too expensive.
+/*
+provider "namecheap" {
+  user_name = "user"
+  api_user = "user"
+  api_key = "key"
+}
+*/
