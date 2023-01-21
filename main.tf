@@ -109,6 +109,8 @@ resource "azurerm_linux_virtual_machine" "orders-loadbalancer-vm" {
   resource_group_name = azurerm_resource_group.orders-rg.name
   size                = "Standard_B1s"
   admin_username      = "youcef"
+  custom_data         = filebase64("configure_loadbalancer.sh")
+
   network_interface_ids = [
     azurerm_network_interface.orders-loadbalancer-vm-public-nic.id,
   ]
