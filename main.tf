@@ -75,6 +75,18 @@ resource "azurerm_network_security_group" "orders-nsg01" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
+
+    security_rule {
+    name                       = "FTP"
+    priority                   = 103
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "21"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
 }
 
 resource "azurerm_public_ip" "orders-loadbalancer-vm-public-ip" {
@@ -109,6 +121,8 @@ resource "azurerm_linux_virtual_machine" "orders-loadbalancer-vm" {
   resource_group_name = azurerm_resource_group.orders-rg.name
   size                = "Standard_B1s"
   admin_username      = "youcef"
+  custom_data         = filebase64("configure_loadbalancer.sh")
+
   network_interface_ids = [
     azurerm_network_interface.orders-loadbalancer-vm-public-nic.id,
   ]
