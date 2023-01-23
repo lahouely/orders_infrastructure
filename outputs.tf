@@ -44,3 +44,7 @@ output "kube_config" {
   value     = azurerm_kubernetes_cluster.orders-k8s.kube_config_raw
   sensitive = true
 }
+
+output "orders-webapp-service-lb-ip" {
+  value = kubernetes_service.orders-webapp-service.status.0.load_balancer.0.ingress.0.ip
+}

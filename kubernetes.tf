@@ -1,6 +1,6 @@
-resource "kubernetes_deployment" "webapp-deployment" {
+resource "kubernetes_deployment" "orders-webapp-deployment" {
   metadata {
-    name = "webapp-deployment"
+    name = "orders-webapp-deployment"
     labels = {
       app = "webapp"
     }
@@ -46,13 +46,13 @@ resource "kubernetes_deployment" "webapp-deployment" {
   }
 }
 
-resource "kubernetes_service" "my-service" {
+resource "kubernetes_service" "orders-webapp-service" {
   metadata {
-    name = "my-service"
+    name = "orders-webapp-service"
   }
   spec {
     selector = {
-      app = kubernetes_deployment.webapp-deployment.spec.0.template.0.metadata[0].labels.app
+      app = kubernetes_deployment.orders-webapp-deployment.spec.0.template.0.metadata[0].labels.app
     }
     port {
       port        = 80
