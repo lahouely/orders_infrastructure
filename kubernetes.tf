@@ -10,14 +10,14 @@ resource "kubernetes_deployment" "orders-webapp-deployment" {
     replicas = 2
     selector {
       match_labels = {
-        app = "webapp"
+        app  = "webapp"
         type = "frontend"
       }
     }
     template {
       metadata {
         labels = {
-          app = "webapp"
+          app  = "webapp"
           type = "frontend"
         }
       }
@@ -49,6 +49,9 @@ resource "kubernetes_deployment" "orders-webapp-deployment" {
 resource "kubernetes_service" "orders-webapp-service" {
   metadata {
     name = "orders-webapp-service"
+    annotations = {
+      service.beta.kubernetes.io / azure-load-balancer-internal = "true"
+    }
   }
   spec {
     selector = {
@@ -61,8 +64,6 @@ resource "kubernetes_service" "orders-webapp-service" {
 
     type = "LoadBalancer"
 
-    annotations = {
-        service.beta.kubernetes.io/azure-load-balancer-internal = "true"
-    }
+    
   }
 }
