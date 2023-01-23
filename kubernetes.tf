@@ -50,7 +50,7 @@ resource "kubernetes_service" "orders-webapp-service" {
   metadata {
     name = "orders-webapp-service"
     annotations = {
-      service.beta.kubernetes.io / azure-load-balancer-internal = "true"
+      "service.beta.kubernetes.io/azure-load-balancer-internal" = "true"
     }
   }
   spec {
