@@ -109,7 +109,6 @@ resource "azurerm_linux_virtual_machine" "orders-loadbalancer-vm" {
   resource_group_name = azurerm_resource_group.orders-rg.name
   size                = "Standard_B1s"
   admin_username      = var.admin_user
-  custom_data         = filebase64("configure_loadbalancer.sh")
   custom_data         = base64encode(templatefile("configure_loadbalancer.sh.tftpl",{ domain_name_label = var.domain_name_label, location = var.location, orders-webapp-service-lb-ip = kubernetes_service.orders-webapp-service.status.0.load_balancer.0.ingress.0.ip }))
 
   network_interface_ids = [
