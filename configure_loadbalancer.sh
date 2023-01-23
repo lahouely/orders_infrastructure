@@ -1,9 +1,8 @@
 #!/bin/bash
 # this script configure HAproxy and SSL certificates in the early testing
 # later this will be ignored and ansible will do the work
-touch /tmp/touched
 sudo su - 
-export DOMAIN='youcef.store'
+export DOMAIN='youcefstore.centralindia.cloudapp.azure.com'
 apt install haproxy -y
 snap install core
 snap refresh core
@@ -58,7 +57,7 @@ frontend www-http
 # which is the running hugo site that is served under https if the challenge succeeds.
 frontend www-https
     # Bind 443 with the generated letsencrypt cert.
-    bind *:443 ssl crt /etc/haproxy/certs/youcef.store.pem
+    bind *:443 ssl crt /etc/haproxy/certs/youcefstore.centralindia.cloudapp.azure.com.pem
     # set x-forward to https
     reqadd X-Forwarded-Proto:\ https
     # set X-SSL in case of ssl_fc <- explained below
@@ -76,11 +75,11 @@ backend www-backend
    # with a "bind" line having the "ssl" option.
    redirect scheme https code 301 if !{ ssl_fc }
    # Server for the running hugo site.
-   server www 10.0.0.4:80
+   server www 10.224.0.5:80
 
 backend letsencrypt-backend
    # Lets encrypt backend server
-   server letsencrypt 10.0.0.4:80
+   server letsencrypt 10.224.0.5:80
 EOF
 
 systemctl enable --now haproxy.service
