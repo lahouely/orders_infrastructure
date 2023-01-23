@@ -13,15 +13,15 @@ variable "namecheap_api_user" {}
 variable "namecheap_api_key" {}
 
 variable "admin_user" {
-  default     = "youcef"
+  default = "youcef"
 }
 
 variable "admin_public_key_path" {
-  default     = "~/.ssh/id_rsa.pub"
+  default = "~/.ssh/id_rsa.pub"
 }
 
 variable "domain_name_label" {
-  default     = "youcefstores"
+  default = "youcefstores"
 }
 
 variable "location" {
