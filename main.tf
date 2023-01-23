@@ -14,9 +14,9 @@ resource "azurerm_resource_group" "orders-rg" {
   name     = join("-", [var.location, var.environment, "orders-rg"])
 }
 
-resource "azurerm_ssh_public_key" "youcef-key" {
-  name                = "youcef-key"
-  public_key          = file("~/.ssh/id_rsa.pub")
+resource "azurerm_ssh_public_key" "admin-public-key" {
+  name                = "admin-public-key"
+  public_key          = file(var.admin_public_key_path)
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-rg.name
 }
@@ -80,7 +80,7 @@ resource "azurerm_network_security_group" "orders-nsg01" {
 resource "azurerm_public_ip" "orders-loadbalancer-vm-public-ip" {
   name                = join("-", [var.location, var.environment, "orders-loadbalancer-vm-public-ip"])
   allocation_method   = "Static"
-  domain_name_label   = "youcefstore"
+  domain_name_label   = var.domain_name_label
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-rg.name
 }
@@ -108,7 +108,7 @@ resource "azurerm_linux_virtual_machine" "orders-loadbalancer-vm" {
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-rg.name
   size                = "Standard_B1s"
-  admin_username      = "youcef"
+  admin_username      = var.admin_user
   custom_data         = filebase64("configure_loadbalancer.sh")
 
   network_interface_ids = [
@@ -116,8 +116,8 @@ resource "azurerm_linux_virtual_machine" "orders-loadbalancer-vm" {
   ]
 
   admin_ssh_key {
-    username   = "youcef"
-    public_key = azurerm_ssh_public_key.youcef-key.public_key
+    username   = var.admin_user
+    public_key = azurerm_ssh_public_key.admin-public-key.public_key
   }
 
   os_disk {

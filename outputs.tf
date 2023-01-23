@@ -3,11 +3,11 @@ output "output-orders-loadbalancer-vm-public-ip" {
 }
 
 output "output-orders-loadbalancer-vm-public-fqdn" {
-  value = join(".", [azurerm_public_ip.orders-loadbalancer-vm-public-ip.domain_name_label, var.location, "cloudapp.azure.com"])
+  value = "${azurerm_public_ip.orders-loadbalancer-vm-public-ip.domain_name_label}.${var.location}.cloudapp.azure.com"
 }
 
 output "to-connect-to-the-loadbalancer-vm-via-ssh" {
-  value = join("@", ["ssh -i ~/.ssh/id_rsa youcef", join(".", [azurerm_public_ip.orders-loadbalancer-vm-public-ip.domain_name_label, var.location, "cloudapp.azure.com"])])
+  value = "ssh -i ${replace(var.admin_public_key_path, "/[.]pub$/", "")} ${var.admin_user}@${azurerm_public_ip.orders-loadbalancer-vm-public-ip.domain_name_label}.${var.location}.cloudapp.azure.com"
 }
 
 output "client_certificate" {
