@@ -14,9 +14,9 @@ resource "azurerm_resource_group" "orders-rg" {
   name     = join("-", [var.location, var.environment, "orders-rg"])
 }
 
-resource "azurerm_ssh_public_key" "youcef-key" {
-  name                = "youcef-key"
-  public_key          = file("~/.ssh/id_rsa.pub")
+resource "azurerm_ssh_public_key" "admin-public-key" {
+  name                = "admin-public-key"
+  public_key          = file(var.admin_public_key_path)
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-rg.name
 }
@@ -33,6 +33,9 @@ resource "azurerm_subnet" "orders-loadbalancer-vnet-subnet01" {
   virtual_network_name = azurerm_virtual_network.orders-loadbalancer-vnet.name
   address_prefixes     = ["10.0.0.0/24"]
   resource_group_name  = azurerm_resource_group.orders-rg.name
+  depends_on = [
+    azurerm_virtual_network.orders-loadbalancer-vnet
+  ]
 }
 
 resource "azurerm_network_security_group" "orders-nsg01" {
@@ -75,24 +78,12 @@ resource "azurerm_network_security_group" "orders-nsg01" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
-
-    security_rule {
-    name                       = "FTP"
-    priority                   = 103
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "21"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
 }
 
 resource "azurerm_public_ip" "orders-loadbalancer-vm-public-ip" {
   name                = join("-", [var.location, var.environment, "orders-loadbalancer-vm-public-ip"])
   allocation_method   = "Static"
-  domain_name_label   = "youcefstore"
+  domain_name_label   = var.domain_name_label
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-rg.name
 }
@@ -120,16 +111,16 @@ resource "azurerm_linux_virtual_machine" "orders-loadbalancer-vm" {
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-rg.name
   size                = "Standard_B1s"
-  admin_username      = "youcef"
-  custom_data         = filebase64("configure_loadbalancer.sh")
+  admin_username      = var.admin_user
+  custom_data         = base64encode(templatefile("configure_loadbalancer.sh.tftpl", { domain_name_label = var.domain_name_label, location = var.location, orders-webapp-service-lb-ip = kubernetes_service.orders-webapp-service.status.0.load_balancer.0.ingress.0.ip }))
 
   network_interface_ids = [
     azurerm_network_interface.orders-loadbalancer-vm-public-nic.id,
   ]
 
   admin_ssh_key {
-    username   = "youcef"
-    public_key = azurerm_ssh_public_key.youcef-key.public_key
+    username   = var.admin_user
+    public_key = azurerm_ssh_public_key.admin-public-key.public_key
   }
 
   os_disk {

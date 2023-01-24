@@ -12,12 +12,36 @@ variable "namecheap_api_user" {}
 
 variable "namecheap_api_key" {}
 
+variable "admin_user" {
+  default = "youcef"
+}
+
+variable "admin_public_key_path" {
+  default = "~/.ssh/id_rsa.pub"
+}
+
+variable "domain_name_label" {
+  default = "djeddou"
+}
+
 variable "location" {
-  default     = "centralindia"
+  default     = "swedencentral"
   description = "location set to centralindia for cost-effectiveness"
 }
 
 variable "environment" {
   default     = "dev"
-  description = "this variable is used to track environment: dev or prod"
+  description = "this variable is used to track the environment: dev, test, prod..."
+}
+
+variable "node_count" {
+  default = 1
+}
+
+variable "cluster_name" {
+  default = "orders-k8s"
+}
+
+variable "dns_prefix" {
+  default = "orders-k8s"
 }
