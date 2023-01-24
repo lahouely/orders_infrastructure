@@ -33,6 +33,9 @@ resource "azurerm_subnet" "orders-loadbalancer-vnet-subnet01" {
   virtual_network_name = azurerm_virtual_network.orders-loadbalancer-vnet.name
   address_prefixes     = ["10.0.0.0/24"]
   resource_group_name  = azurerm_resource_group.orders-rg.name
+  depends_on = [
+    azurerm_virtual_network.orders-loadbalancer-vnet
+  ]
 }
 
 resource "azurerm_network_security_group" "orders-nsg01" {

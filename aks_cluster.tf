@@ -22,6 +22,9 @@ resource "azurerm_virtual_network_peering" "aks-loadbalancer-peering" {
   resource_group_name  = azurerm_resource_group.orders-aks-rg.name
   virtual_network_name      = azurerm_virtual_network.orders-loadbalancer-vnet.name
   remote_virtual_network_id = azurerm_virtual_network.orders-aks-vnet.id
+  depends_on = [
+    azurerm_virtual_network.orders-aks-vnet
+  ]
 }
 
 resource "azurerm_virtual_network_peering" "loadbalancer-aks-peering" {
