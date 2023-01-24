@@ -21,11 +21,11 @@ variable "admin_public_key_path" {
 }
 
 variable "domain_name_label" {
-  default = "youcefstorage"
+  default = "djeddou"
 }
 
 variable "location" {
-  default     = "centralindia"
+  default     = "swedencentral"
   description = "location set to centralindia for cost-effectiveness"
 }
 
