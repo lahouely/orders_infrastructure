@@ -4,6 +4,7 @@
 sudo su - 
 export DOMAIN='${domain_name_label}.${location}.cloudapp.azure.com'
 apt install haproxy -y
+systemctl stop haproxy.service
 snap install core
 snap refresh core
 snap install --classic certbot
@@ -82,7 +83,9 @@ backend letsencrypt-backend
    server letsencrypt ${orders-webapp-service-lb-ip}:80
 EOF
 
-systemctl enable --now haproxy.service
+systemctl enable haproxy.service
+systemctl start haproxy.service
+systemctl restart haproxy.service
 systemctl status haproxy.service
 
 #ss -tuna
