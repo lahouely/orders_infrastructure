@@ -21,7 +21,7 @@ variable "admin_public_key_path" {
 }
 
 variable "domain_name_label" {
-  default = "youcefstores"
+  default = "youcefstoring"
 }
 
 variable "location" {
