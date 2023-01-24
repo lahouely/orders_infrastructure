@@ -63,7 +63,5 @@ resource "kubernetes_service" "orders-webapp-service" {
     }
 
     type = "LoadBalancer"
-
-    
   }
 }

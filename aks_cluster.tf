@@ -19,14 +19,14 @@ resource "azurerm_subnet" "orders-aks-vnet-subnet01" {
 
 resource "azurerm_virtual_network_peering" "aks-loadbalancer-peering" {
   name                      = "aks-loadbalancer-peering"
-  resource_group_name  = azurerm_resource_group.orders-rg.name
+  resource_group_name       = azurerm_resource_group.orders-rg.name
   virtual_network_name      = azurerm_virtual_network.orders-loadbalancer-vnet.name
   remote_virtual_network_id = azurerm_virtual_network.orders-aks-vnet.id
 }
 
 resource "azurerm_virtual_network_peering" "loadbalancer-aks-peering" {
   name                      = "loadbalancer-aks-peering"
-  resource_group_name  = azurerm_resource_group.orders-aks-rg.name
+  resource_group_name       = azurerm_resource_group.orders-aks-rg.name
   virtual_network_name      = azurerm_virtual_network.orders-aks-vnet.name
   remote_virtual_network_id = azurerm_virtual_network.orders-loadbalancer-vnet.id
 }
@@ -39,9 +39,9 @@ resource "azurerm_kubernetes_cluster" "orders-k8s" {
   resource_group_name = azurerm_resource_group.orders-aks-rg.name
   node_resource_group = "${var.location}-${var.environment}-orders-k8s-managed-cluster-rg"
   default_node_pool {
-    name       = "nodepool"
-    vm_size    = "Standard_B2s"
-    node_count = var.node_count
+    name           = "nodepool"
+    vm_size        = "Standard_B2s"
+    node_count     = var.node_count
     vnet_subnet_id = azurerm_subnet.orders-aks-vnet-subnet01.id
   }
   linux_profile {
