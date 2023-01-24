@@ -12,7 +12,7 @@ resource "azurerm_virtual_network" "orders-aks-vnet" {
 
 resource "azurerm_subnet" "orders-aks-vnet-subnet01" {
   name                 = join("-", [var.location, var.environment, "orders-aks-vnet-subnet01"])
-  virtual_network_name = azurerm_virtual_network.orders-loadbalancer-vnet.name
+  virtual_network_name = azurerm_virtual_network.orders-aks-vnet.name
   address_prefixes     = ["10.1.0.0/24"]
   resource_group_name  = azurerm_resource_group.orders-aks-rg.name
 }
@@ -22,9 +22,6 @@ resource "azurerm_virtual_network_peering" "aks-loadbalancer-peering" {
   resource_group_name  = azurerm_resource_group.orders-aks-rg.name
   virtual_network_name      = azurerm_virtual_network.orders-loadbalancer-vnet.name
   remote_virtual_network_id = azurerm_virtual_network.orders-aks-vnet.id
-  depends_on = [
-    azurerm_virtual_network.orders-aks-vnet
-  ]
 }
 
 resource "azurerm_virtual_network_peering" "loadbalancer-aks-peering" {
