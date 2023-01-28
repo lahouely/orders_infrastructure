@@ -19,7 +19,7 @@ variable "cloudflare_email" {}
 variable "cloudflare_zone_id" {}
 
 variable "domain_name_label" {
-  default = "boston-dynamics"
+  default = "bendebbagh"
 }
 
 variable "location" {

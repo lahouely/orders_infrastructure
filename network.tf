@@ -22,9 +22,9 @@ resource "azurerm_subnet" "orders-loadbalancer-vnet-default-subnet" {
 
 variable "orders-public-nsg-ports" {
   default = [
-    { "name" = "SSH", "destination_port_range" = 22, "priority" = 100 },
-    { "name" = "HTTP", "destination_port_range" = 80, "priority" = 101 },
-    { "name" = "HTTPS", "destination_port_range" = 443, "priority" = 102 }
+    { "name" = "SSH",   "port" = 22,  "priority" = 100 },
+    { "name" = "HTTP",  "port" = 80,  "priority" = 101 },
+    { "name" = "HTTPS", "port" = 443, "priority" = 102 }
   ]
 }
 
@@ -32,41 +32,21 @@ resource "azurerm_network_security_group" "orders-public-nsg" {
   name                = join("-", [var.location, var.environment, "orders-public-nsg"])
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-network-rg.name
-
-  security_rule {
-    name                       = "SSH"
-    priority                   = 100
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "22"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-
-  security_rule {
-    name                       = "HTTP"
-    priority                   = 101
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "80"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-
-  security_rule {
-    name                       = "HTTPS"
-    priority                   = 102
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "443"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
+  
+  dynamic "security_rule" {
+    iterator = item
+		for_each = var.orders-public-nsg-ports
+		content {
+      name                       = item.name
+      priority                   = item.priority
+      direction                  = "Inbound"
+      access                     = "Allow"
+      protocol                   = "Tcp"
+      source_port_range          = "*"
+      destination_port_range     = item.port
+      source_address_prefix      = "*"
+      destination_address_prefix = "*"
+    }
   }
 }
 
