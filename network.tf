@@ -37,13 +37,13 @@ resource "azurerm_network_security_group" "orders-public-nsg" {
     iterator = item
 		for_each = var.orders-public-nsg-ports
 		content {
-      name                       = item.name
-      priority                   = item.priority
+      name                       = item.value.name
+      priority                   = item.value.priority
       direction                  = "Inbound"
       access                     = "Allow"
       protocol                   = "Tcp"
       source_port_range          = "*"
-      destination_port_range     = item.port
+      destination_port_range     = item.value.port
       source_address_prefix      = "*"
       destination_address_prefix = "*"
     }
