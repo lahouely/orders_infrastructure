@@ -6,26 +6,24 @@ variable "azure_client_id" {}
 
 variable "azure_client_secret" {}
 
-variable "namecheap_user_name" {}
+variable "admin_user" {}
 
-variable "namecheap_api_user" {}
+variable "db_password" {}
 
-variable "namecheap_api_key" {}
+variable "admin_public_key_path" {}
 
-variable "admin_user" {
-  default = "youcef"
-}
+variable "cloudflare_api_key" {}
 
-variable "admin_public_key_path" {
-  default = "~/.ssh/id_rsa.pub"
-}
+variable "cloudflare_email" {}
+
+variable "cloudflare_zone_id" {}
 
 variable "domain_name_label" {
-  default = "djeddou"
+  default = "boston-dynamics"
 }
 
 variable "location" {
-  default     = "swedencentral"
+  default     = "centralindia"
   description = "location set to centralindia for cost-effectiveness"
 }
 
