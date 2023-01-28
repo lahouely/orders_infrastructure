@@ -140,3 +140,17 @@ resource "azurerm_virtual_network_peering" "loadbalancer-aks-peering" {
   virtual_network_name      = azurerm_virtual_network.orders-aks-vnet.name
   remote_virtual_network_id = azurerm_virtual_network.orders-loadbalancer-vnet.id
 }
+
+resource "azurerm_virtual_network_peering" "aks-db-peering" {
+  name                      = "aks-db-peering"
+  resource_group_name       = azurerm_resource_group.orders-network-rg.name
+  virtual_network_name      = azurerm_virtual_network.orders-db-vnet.name
+  remote_virtual_network_id = azurerm_virtual_network.orders-aks-vnet.id
+}
+
+resource "azurerm_virtual_network_peering" "db-aks-peering" {
+  name                      = "db-aks-peering"
+  resource_group_name       = azurerm_resource_group.orders-network-rg.name
+  virtual_network_name      = azurerm_virtual_network.orders-aks-vnet.name
+  remote_virtual_network_id = azurerm_virtual_network.orders-db-vnet.id
+}
