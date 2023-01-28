@@ -6,9 +6,9 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~>2.0"
     }
-    namecheap = {
-      source  = "namecheap/namecheap"
-      version = ">= 2.0.0"
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "3.33.1"
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
@@ -33,11 +33,7 @@ provider "kubernetes" {
   cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.orders-k8s.kube_config.0.cluster_ca_certificate)
 }
 
-//NameCheap api is unfortunatly too expensive.
-//We're using their sandbox..
-provider "namecheap" {
-  user_name   = var.namecheap_user_name
-  api_user    = var.namecheap_api_user
-  api_key     = var.namecheap_api_key
-  use_sandbox = true
+provider "cloudflare" {
+  api_key = var.cloudflare_api_key
+  email   = var.cloudflare_email
 }
