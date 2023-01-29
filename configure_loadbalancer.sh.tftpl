@@ -3,6 +3,7 @@
 # later this will be ignored and ansible will do the work
 sudo su - 
 export DOMAIN='${domain_name_label}.${location}.cloudapp.azure.com'
+apt-get update #<<<<<<<<<<<<<<<<<<<<<<<
 apt install haproxy -y
 systemctl stop haproxy.service
 snap install core

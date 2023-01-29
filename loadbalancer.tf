@@ -1,10 +1,10 @@
 resource "azurerm_resource_group" "orders-loadbalancer-vm-rg" {
   location = var.location
-  name     = join("-", [var.location, var.environment, "orders-loadbalancer-vm-rg"])
+  name     = "${var.location}-${var.environment}-orders-loadbalancer-vm-rg"
 }
 
 resource "azurerm_linux_virtual_machine" "orders-loadbalancer-vm" {
-  name                = join("-", [var.location, var.environment, "orders-loadbalancer-vm"])
+  name                = "${var.location}-${var.environment}-orders-loadbalancer-vm"
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-loadbalancer-vm-rg.name
   size                = "Standard_B1s"

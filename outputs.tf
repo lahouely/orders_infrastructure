@@ -10,6 +10,10 @@ output "to-connect-to-the-loadbalancer-vm-via-ssh" {
   value = "ssh -i ${replace(var.admin_public_key_path, "/[.]pub$/", "")} ${var.admin_user}@${azurerm_public_ip.orders-loadbalancer-vm-public-ip.domain_name_label}.${var.location}.cloudapp.azure.com"
 }
 
+output "to-connect-to-the-db-management-vm-via-ssh" {
+  value = "ssh -i ${replace(var.admin_public_key_path, "/[.]pub$/", "")} ${var.admin_user}@${azurerm_public_ip.orders-management-vm-public-ip.domain_name_label}.${var.location}.cloudapp.azure.com"
+}
+
 output "client_certificate" {
   value     = azurerm_kubernetes_cluster.orders-k8s.kube_config[0].client_certificate
   sensitive = true

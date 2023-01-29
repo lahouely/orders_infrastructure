@@ -1,17 +1,17 @@
 resource "azurerm_resource_group" "orders-network-rg" {
   location = var.location
-  name     = join("-", [var.location, var.environment, "orders-network-rg"])
+  name     = "${var.location}-${var.environment}-orders-network-rg"
 }
 
 resource "azurerm_virtual_network" "orders-loadbalancer-vnet" {
-  name                = join("-", [var.location, var.environment, "orders-loadbalancer-vnet"])
+  name                = "${var.location}-${var.environment}-orders-loadbalancer-vnet"
   address_space       = ["10.0.0.0/16"]
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-network-rg.name
 }
 
 resource "azurerm_subnet" "orders-loadbalancer-vnet-default-subnet" {
-  name                 = join("-", [var.location, var.environment, "orders-loadbalancer-vnet-default-subnet"])
+  name                 = "${var.location}-${var.environment}-orders-loadbalancer-vnet-default-subnet"
   virtual_network_name = azurerm_virtual_network.orders-loadbalancer-vnet.name
   address_prefixes     = ["10.0.0.0/24"]
   resource_group_name  = azurerm_resource_group.orders-network-rg.name
@@ -29,7 +29,7 @@ variable "orders-public-nsg-ports" {
 }
 
 resource "azurerm_network_security_group" "orders-public-nsg" {
-  name                = join("-", [var.location, var.environment, "orders-public-nsg"])
+  name                = "${var.location}-${var.environment}-orders-public-nsg"
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-network-rg.name
   
@@ -51,7 +51,7 @@ resource "azurerm_network_security_group" "orders-public-nsg" {
 }
 
 resource "azurerm_public_ip" "orders-loadbalancer-vm-public-ip" {
-  name                = join("-", [var.location, var.environment, "orders-loadbalancer-vm-public-ip"])
+  name                = "${var.location}-${var.environment}-orders-loadbalancer-vm-public-ip"
   allocation_method   = "Static"
   domain_name_label   = var.domain_name_label
   location            = var.location
@@ -59,7 +59,7 @@ resource "azurerm_public_ip" "orders-loadbalancer-vm-public-ip" {
 }
 
 resource "azurerm_network_interface" "orders-loadbalancer-vm-public-nic" {
-  name                = join("-", [var.location, var.environment, "orders-loadbalancer-vm-public-nic"])
+  name                = "${var.location}-${var.environment}-orders-loadbalancer-vm-public-nic"
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-network-rg.name
 
@@ -76,17 +76,53 @@ resource "azurerm_network_interface_security_group_association" "orders-public-n
   network_security_group_id = azurerm_network_security_group.orders-public-nsg.id
 }
 
+resource "azurerm_public_ip" "orders-management-vm-public-ip" {
+  name                = "${var.location}-${var.environment}-orders-db-management-vm-public-ip"
+  allocation_method   = "Static"
+  domain_name_label   = "${var.domain_name_label}-db"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.orders-network-rg.name
+}
+
+resource "azurerm_subnet" "orders-db-vnet-management-subnet" {
+  name                 = "${var.location}-${var.environment}-orders-db-vnet-management-subnet"
+  virtual_network_name = azurerm_virtual_network.orders-db-vnet.name
+  address_prefixes     = ["10.2.1.0/24"]
+  resource_group_name  = azurerm_resource_group.orders-network-rg.name
+  depends_on = [
+    azurerm_virtual_network.orders-loadbalancer-vnet
+  ]
+}
+
+resource "azurerm_network_interface" "orders-management-vm-public-nic" {
+  name                = "${var.location}-${var.environment}-orders-management-vm-public-nic"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.orders-network-rg.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.orders-db-vnet-management-subnet.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.orders-management-vm-public-ip.id
+  }
+}
+
+resource "azurerm_network_interface_security_group_association" "orders-public-nsg-management-vm-nic-association" {
+  network_interface_id      = azurerm_network_interface.orders-management-vm-public-nic.id
+  network_security_group_id = azurerm_network_security_group.orders-public-nsg.id
+}
+
 resource "azurerm_virtual_network" "orders-db-vnet" {
-  name                = join("-", [var.location, var.environment, "orders-db-vnet"])
+  name                = "${var.location}-${var.environment}-orders-db-vnet"
   address_space       = ["10.2.0.0/16"]
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-network-rg.name
 }
 
 resource "azurerm_subnet" "orders-db-vnet-default-subnet" {
-  name                 = join("-", [var.location, var.environment, "orders-db-vnet-default-subnet"])
+  name                 = "${var.location}-${var.environment}-orders-db-vnet-default-subnet"
   virtual_network_name = azurerm_virtual_network.orders-db-vnet.name
-  address_prefixes     = ["10.2.2.0/24"]
+  address_prefixes     = ["10.2.0.0/24"]
   resource_group_name  = azurerm_resource_group.orders-network-rg.name
 
   service_endpoints = ["Microsoft.Storage"]
@@ -114,14 +150,14 @@ resource "azurerm_private_dns_zone_virtual_network_link" "orders-db-private-dns-
 }
 
 resource "azurerm_virtual_network" "orders-aks-vnet" {
-  name                = join("-", [var.location, var.environment, "orders-aks-vnet"])
+  name                = "${var.location}-${var.environment}-orders-aks-vnet"
   address_space       = ["10.1.0.0/16"]
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-network-rg.name
 }
 
 resource "azurerm_subnet" "orders-aks-vnet-default-subnet" {
-  name                 = join("-", [var.location, var.environment, "orders-aks-vnet-default-subnet"])
+  name                 = "${var.location}-${var.environment}-orders-aks-vnet-default-subnet"
   virtual_network_name = azurerm_virtual_network.orders-aks-vnet.name
   address_prefixes     = ["10.1.0.0/24"]
   resource_group_name  = azurerm_resource_group.orders-network-rg.name

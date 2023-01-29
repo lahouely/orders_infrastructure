@@ -1,0 +1,10 @@
+#!/bin/bash
+# this script configure HAproxy and SSL certificates in the early testing
+# later this will be ignored and ansible will do the work
+sudo su - 
+apt update
+apt install mysql-client-core-8.0 -y
+
+cat <<EOF > /tmp/base.sql
+hello
+EOF
