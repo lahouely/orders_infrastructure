@@ -10,6 +10,64 @@ resource "azurerm_virtual_network" "orders-loadbalancer-vnet" {
   resource_group_name = azurerm_resource_group.orders-network-rg.name
 }
 
+resource "azurerm_virtual_network" "orders-aks-vnet" {
+  name                = "${var.location}-${var.environment}-orders-aks-vnet"
+  address_space       = ["10.1.0.0/16"]
+  location            = var.location
+  resource_group_name = azurerm_resource_group.orders-network-rg.name
+}
+
+resource "azurerm_virtual_network" "orders-db-vnet" {
+  name                = "${var.location}-${var.environment}-orders-db-vnet"
+  address_space       = ["10.2.0.0/16"]
+  location            = var.location
+  resource_group_name = azurerm_resource_group.orders-network-rg.name
+}
+
+resource "azurerm_virtual_network_peering" "aks-loadbalancer-peering" {
+  name                      = "aks-loadbalancer-peering"
+  resource_group_name       = azurerm_resource_group.orders-network-rg.name
+  virtual_network_name      = azurerm_virtual_network.orders-loadbalancer-vnet.name
+  remote_virtual_network_id = azurerm_virtual_network.orders-aks-vnet.id
+  depends_on = [
+    azurerm_virtual_network.orders-loadbalancer-vnet,
+    azurerm_virtual_network.orders-aks-vnet
+  ]
+}
+
+resource "azurerm_virtual_network_peering" "loadbalancer-aks-peering" {
+  name                      = "loadbalancer-aks-peering"
+  resource_group_name       = azurerm_resource_group.orders-network-rg.name
+  virtual_network_name      = azurerm_virtual_network.orders-aks-vnet.name
+  remote_virtual_network_id = azurerm_virtual_network.orders-loadbalancer-vnet.id
+  depends_on = [
+    azurerm_virtual_network.orders-loadbalancer-vnet,
+    azurerm_virtual_network.orders-aks-vnet
+  ]
+}
+
+resource "azurerm_virtual_network_peering" "aks-db-peering" {
+  name                      = "aks-db-peering"
+  resource_group_name       = azurerm_resource_group.orders-network-rg.name
+  virtual_network_name      = azurerm_virtual_network.orders-db-vnet.name
+  remote_virtual_network_id = azurerm_virtual_network.orders-aks-vnet.id
+  depends_on = [
+    azurerm_virtual_network.orders-aks-vnet,
+    azurerm_virtual_network.orders-db-vnet
+  ]
+}
+
+resource "azurerm_virtual_network_peering" "db-aks-peering" {
+  name                      = "db-aks-peering"
+  resource_group_name       = azurerm_resource_group.orders-network-rg.name
+  virtual_network_name      = azurerm_virtual_network.orders-aks-vnet.name
+  remote_virtual_network_id = azurerm_virtual_network.orders-db-vnet.id
+  depends_on = [
+    azurerm_virtual_network.orders-aks-vnet,
+    azurerm_virtual_network.orders-db-vnet
+  ]
+}
+
 resource "azurerm_subnet" "orders-loadbalancer-vnet-default-subnet" {
   name                 = "${var.location}-${var.environment}-orders-loadbalancer-vnet-default-subnet"
   virtual_network_name = azurerm_virtual_network.orders-loadbalancer-vnet.name
@@ -19,6 +77,48 @@ resource "azurerm_subnet" "orders-loadbalancer-vnet-default-subnet" {
     azurerm_virtual_network.orders-loadbalancer-vnet
   ]
 }
+
+resource "azurerm_subnet" "orders-aks-vnet-default-subnet" {
+  name                 = "${var.location}-${var.environment}-orders-aks-vnet-default-subnet"
+  virtual_network_name = azurerm_virtual_network.orders-aks-vnet.name
+  address_prefixes     = ["10.1.0.0/24"]
+  resource_group_name  = azurerm_resource_group.orders-network-rg.name
+  depends_on = [
+    azurerm_virtual_network.orders-aks-vnet
+  ]
+}
+
+resource "azurerm_subnet" "orders-db-vnet-default-subnet" {
+  name                 = "${var.location}-${var.environment}-orders-db-vnet-default-subnet"
+  virtual_network_name = azurerm_virtual_network.orders-db-vnet.name
+  address_prefixes     = ["10.2.0.0/24"]
+  resource_group_name  = azurerm_resource_group.orders-network-rg.name
+
+  service_endpoints = ["Microsoft.Storage"]
+  delegation {
+    name = "fs"
+    service_delegation {
+      name = "Microsoft.DBforMySQL/flexibleServers"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+      ]
+    }
+  }
+  depends_on = [
+    azurerm_virtual_network.orders-db-vnet
+  ]
+}
+
+resource "azurerm_subnet" "orders-db-vnet-management-subnet" {
+  name                 = "${var.location}-${var.environment}-orders-db-vnet-management-subnet"
+  virtual_network_name = azurerm_virtual_network.orders-db-vnet.name
+  address_prefixes     = ["10.2.1.0/24"]
+  resource_group_name  = azurerm_resource_group.orders-network-rg.name
+  depends_on = [
+    azurerm_virtual_network.orders-loadbalancer-vnet
+  ]
+}
+
 
 variable "orders-public-nsg-ports" {
   default = [
@@ -84,15 +184,6 @@ resource "azurerm_public_ip" "orders-management-vm-public-ip" {
   resource_group_name = azurerm_resource_group.orders-network-rg.name
 }
 
-resource "azurerm_subnet" "orders-db-vnet-management-subnet" {
-  name                 = "${var.location}-${var.environment}-orders-db-vnet-management-subnet"
-  virtual_network_name = azurerm_virtual_network.orders-db-vnet.name
-  address_prefixes     = ["10.2.1.0/24"]
-  resource_group_name  = azurerm_resource_group.orders-network-rg.name
-  depends_on = [
-    azurerm_virtual_network.orders-loadbalancer-vnet
-  ]
-}
 
 resource "azurerm_network_interface" "orders-management-vm-public-nic" {
   name                = "${var.location}-${var.environment}-orders-management-vm-public-nic"
@@ -112,33 +203,9 @@ resource "azurerm_network_interface_security_group_association" "orders-public-n
   network_security_group_id = azurerm_network_security_group.orders-public-nsg.id
 }
 
-resource "azurerm_virtual_network" "orders-db-vnet" {
-  name                = "${var.location}-${var.environment}-orders-db-vnet"
-  address_space       = ["10.2.0.0/16"]
-  location            = var.location
-  resource_group_name = azurerm_resource_group.orders-network-rg.name
-}
 
-resource "azurerm_subnet" "orders-db-vnet-default-subnet" {
-  name                 = "${var.location}-${var.environment}-orders-db-vnet-default-subnet"
-  virtual_network_name = azurerm_virtual_network.orders-db-vnet.name
-  address_prefixes     = ["10.2.0.0/24"]
-  resource_group_name  = azurerm_resource_group.orders-network-rg.name
 
-  service_endpoints = ["Microsoft.Storage"]
-  delegation {
-    name = "fs"
-    service_delegation {
-      name = "Microsoft.DBforMySQL/flexibleServers"
-      actions = [
-        "Microsoft.Network/virtualNetworks/subnets/join/action",
-      ]
-    }
-  }
-  depends_on = [
-    azurerm_virtual_network.orders-db-vnet
-  ]
-}
+
 
 resource "azurerm_private_dns_zone" "orders-db-private-dns-zone" {
   name                = "orders-db-private-dns-zone.mysql.database.azure.com"
@@ -156,63 +223,5 @@ resource "azurerm_private_dns_zone_virtual_network_link" "orders-db-private-dns-
   ]
 }
 
-resource "azurerm_virtual_network" "orders-aks-vnet" {
-  name                = "${var.location}-${var.environment}-orders-aks-vnet"
-  address_space       = ["10.1.0.0/16"]
-  location            = var.location
-  resource_group_name = azurerm_resource_group.orders-network-rg.name
-}
 
-resource "azurerm_subnet" "orders-aks-vnet-default-subnet" {
-  name                 = "${var.location}-${var.environment}-orders-aks-vnet-default-subnet"
-  virtual_network_name = azurerm_virtual_network.orders-aks-vnet.name
-  address_prefixes     = ["10.1.0.0/24"]
-  resource_group_name  = azurerm_resource_group.orders-network-rg.name
-  depends_on = [
-    azurerm_virtual_network.orders-aks-vnet
-  ]
-}
 
-resource "azurerm_virtual_network_peering" "aks-loadbalancer-peering" {
-  name                      = "aks-loadbalancer-peering"
-  resource_group_name       = azurerm_resource_group.orders-network-rg.name
-  virtual_network_name      = azurerm_virtual_network.orders-loadbalancer-vnet.name
-  remote_virtual_network_id = azurerm_virtual_network.orders-aks-vnet.id
-  depends_on = [
-    azurerm_virtual_network.orders-loadbalancer-vnet,
-    azurerm_virtual_network.orders-aks-vnet
-  ]
-}
-
-resource "azurerm_virtual_network_peering" "loadbalancer-aks-peering" {
-  name                      = "loadbalancer-aks-peering"
-  resource_group_name       = azurerm_resource_group.orders-network-rg.name
-  virtual_network_name      = azurerm_virtual_network.orders-aks-vnet.name
-  remote_virtual_network_id = azurerm_virtual_network.orders-loadbalancer-vnet.id
-  depends_on = [
-    azurerm_virtual_network.orders-loadbalancer-vnet,
-    azurerm_virtual_network.orders-aks-vnet
-  ]
-}
-
-resource "azurerm_virtual_network_peering" "aks-db-peering" {
-  name                      = "aks-db-peering"
-  resource_group_name       = azurerm_resource_group.orders-network-rg.name
-  virtual_network_name      = azurerm_virtual_network.orders-db-vnet.name
-  remote_virtual_network_id = azurerm_virtual_network.orders-aks-vnet.id
-  depends_on = [
-    azurerm_virtual_network.orders-aks-vnet,
-    azurerm_virtual_network.orders-db-vnet
-  ]
-}
-
-resource "azurerm_virtual_network_peering" "db-aks-peering" {
-  name                      = "db-aks-peering"
-  resource_group_name       = azurerm_resource_group.orders-network-rg.name
-  virtual_network_name      = azurerm_virtual_network.orders-aks-vnet.name
-  remote_virtual_network_id = azurerm_virtual_network.orders-db-vnet.id
-  depends_on = [
-    azurerm_virtual_network.orders-aks-vnet,
-    azurerm_virtual_network.orders-db-vnet
-  ]
-}
