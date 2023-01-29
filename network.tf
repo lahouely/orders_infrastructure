@@ -161,6 +161,9 @@ resource "azurerm_subnet" "orders-aks-vnet-default-subnet" {
   virtual_network_name = azurerm_virtual_network.orders-aks-vnet.name
   address_prefixes     = ["10.1.0.0/24"]
   resource_group_name  = azurerm_resource_group.orders-network-rg.name
+  depends_on = [
+    azurerm_virtual_network.orders-aks-vnet
+  ]
 }
 
 resource "azurerm_virtual_network_peering" "aks-loadbalancer-peering" {
@@ -168,6 +171,10 @@ resource "azurerm_virtual_network_peering" "aks-loadbalancer-peering" {
   resource_group_name       = azurerm_resource_group.orders-network-rg.name
   virtual_network_name      = azurerm_virtual_network.orders-loadbalancer-vnet.name
   remote_virtual_network_id = azurerm_virtual_network.orders-aks-vnet.id
+  depends_on = [
+    azurerm_virtual_network.orders-loadbalancer-vnet,
+    azurerm_virtual_network.orders-aks-vnet
+  ]
 }
 
 resource "azurerm_virtual_network_peering" "loadbalancer-aks-peering" {
@@ -175,6 +182,10 @@ resource "azurerm_virtual_network_peering" "loadbalancer-aks-peering" {
   resource_group_name       = azurerm_resource_group.orders-network-rg.name
   virtual_network_name      = azurerm_virtual_network.orders-aks-vnet.name
   remote_virtual_network_id = azurerm_virtual_network.orders-loadbalancer-vnet.id
+  depends_on = [
+    azurerm_virtual_network.orders-loadbalancer-vnet,
+    azurerm_virtual_network.orders-aks-vnet
+  ]
 }
 
 resource "azurerm_virtual_network_peering" "aks-db-peering" {
@@ -182,6 +193,10 @@ resource "azurerm_virtual_network_peering" "aks-db-peering" {
   resource_group_name       = azurerm_resource_group.orders-network-rg.name
   virtual_network_name      = azurerm_virtual_network.orders-db-vnet.name
   remote_virtual_network_id = azurerm_virtual_network.orders-aks-vnet.id
+  depends_on = [
+    azurerm_virtual_network.orders-aks-vnet,
+    azurerm_virtual_network.orders-db-vnet
+  ]
 }
 
 resource "azurerm_virtual_network_peering" "db-aks-peering" {
@@ -189,4 +204,8 @@ resource "azurerm_virtual_network_peering" "db-aks-peering" {
   resource_group_name       = azurerm_resource_group.orders-network-rg.name
   virtual_network_name      = azurerm_virtual_network.orders-aks-vnet.name
   remote_virtual_network_id = azurerm_virtual_network.orders-db-vnet.id
+  depends_on = [
+    azurerm_virtual_network.orders-aks-vnet,
+    azurerm_virtual_network.orders-db-vnet
+  ]
 }
