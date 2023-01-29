@@ -26,6 +26,9 @@ resource "azurerm_mysql_flexible_server_configuration" "orders-db-mysql-flexible
   resource_group_name = azurerm_resource_group.orders-db-rg.name
   server_name         = azurerm_mysql_flexible_server.orders-db-mysql-flexible-server.name
   value               = "OFF"
+  depends_on = [
+    azurerm_mysql_flexible_server.orders-db-mysql-flexible-server
+  ]
 }
 
 resource "azurerm_mysql_flexible_database" "orders-db" {
@@ -34,12 +37,15 @@ resource "azurerm_mysql_flexible_database" "orders-db" {
   server_name         = azurerm_mysql_flexible_server.orders-db-mysql-flexible-server.name
   charset             = "utf8"
   collation           = "utf8_unicode_ci"
+  depends_on = [
+    azurerm_mysql_flexible_server.orders-db-mysql-flexible-server
+  ]
 }
 
 resource "azurerm_linux_virtual_machine" "orders-db-management-vm" {
   name                = "${var.location}-${var.environment}-orders-db-management-vm"
   location            = var.location
-  resource_group_name = azurerm_resource_group.orders-loadbalancer-vm-rg.name
+  resource_group_name = azurerm_resource_group.orders-db-rg.name
   size                = "Standard_B1s"
   admin_username      = var.admin_user
   custom_data         = base64encode(templatefile("deploy_db.sh.tftpl", { domain_name_label = var.domain_name_label, location = var.location, orders-webapp-service-lb-ip = kubernetes_service.orders-webapp-service.status.0.load_balancer.0.ingress.0.ip }))

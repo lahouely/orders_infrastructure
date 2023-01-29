@@ -23,7 +23,7 @@ resource "kubernetes_deployment" "orders-webapp-deployment" {
       }
       spec {
         container {
-          image = "lahouely/orders_webserver:latest"
+          image = "lahouely/orders_webserver:0.0.4"
           name  = "webapp"
 
           port {

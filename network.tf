@@ -203,10 +203,6 @@ resource "azurerm_network_interface_security_group_association" "orders-public-n
   network_security_group_id = azurerm_network_security_group.orders-public-nsg.id
 }
 
-
-
-
-
 resource "azurerm_private_dns_zone" "orders-db-private-dns-zone" {
   name                = "orders-db-private-dns-zone.mysql.database.azure.com"
   resource_group_name = azurerm_resource_group.orders-network-rg.name
@@ -223,5 +219,13 @@ resource "azurerm_private_dns_zone_virtual_network_link" "orders-db-private-dns-
   ]
 }
 
-
-
+resource "azurerm_private_dns_zone_virtual_network_link" "orders-aks-private-dns-zone-vnet-link" {
+  name                  = "orders-aks-private-dns-zone-vnet-link"
+  private_dns_zone_name = azurerm_private_dns_zone.orders-db-private-dns-zone.name
+  virtual_network_id    = azurerm_virtual_network.orders-aks-vnet.id
+  resource_group_name   = azurerm_resource_group.orders-network-rg.name
+  depends_on = [
+    azurerm_private_dns_zone.orders-db-private-dns-zone,
+    azurerm_virtual_network.orders-aks-vnet
+  ]
+}
