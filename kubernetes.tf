@@ -1,3 +1,44 @@
+/*resource "kubernetes_secret" "orders-storage-account-secret" {
+  metadata {
+    name = "orders-storage-account-secret"
+  }
+
+  type = "Opaque"
+
+  data = {
+    ".dockerconfigjson" = jsonencode({
+      auths = {
+        "${var.registry_server}" = {
+          "username" = var.registry_username
+          "password" = var.registry_password
+          "email"    = var.registry_email
+          "auth"     = base64encode("${var.registry_username}:${var.registry_password}")
+        }
+      }
+    })
+  }
+}
+
+resource "kubernetes_persistent_volume" "orders-sessions-pv" {
+  metadata {
+    name = "orders-sessions-pv"
+  }
+  spec {
+    capacity = {
+      storage = "1Gi"
+    }
+    access_modes = ["ReadWriteMany"]
+    persistent_volume_source {
+      azure_file {
+        //read_only = false
+        secret_name = 
+        //secret_namespace =
+        share_name = azurerm_storage_share.orders-storage-sessions-share.name
+      }
+    }
+  }
+}*/
+
 resource "kubernetes_deployment" "orders-webapp-deployment" {
   metadata {
     name = "orders-webapp-deployment"
@@ -7,7 +48,7 @@ resource "kubernetes_deployment" "orders-webapp-deployment" {
   }
 
   spec {
-    replicas = 2
+    replicas = 3
     selector {
       match_labels = {
         app  = "webapp"
@@ -23,7 +64,7 @@ resource "kubernetes_deployment" "orders-webapp-deployment" {
       }
       spec {
         container {
-          image = "lahouely/orders_webserver:0.0.4"
+          image = "lahouely/orders_webserver:0.1.2"
           name  = "webapp"
 
           port {

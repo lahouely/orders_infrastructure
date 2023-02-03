@@ -10,6 +10,8 @@ variable "admin_user" {}
 
 variable "db_password" {}
 
+variable "app_admin_password" {}
+
 variable "admin_public_key_path" {}
 
 variable "cloudflare_api_key" {}
@@ -19,7 +21,7 @@ variable "cloudflare_email" {}
 variable "cloudflare_zone_id" {}
 
 variable "domain_name_label" {
-  default = "bendebbaghhs"
+  default = "bendebbaghhhh"
 }
 
 variable "location" {

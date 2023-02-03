@@ -14,6 +14,14 @@ output "to-connect-to-the-db-management-vm-via-ssh" {
   value = "ssh -i ${replace(var.admin_public_key_path, "/[.]pub$/", "")} ${var.admin_user}@${azurerm_public_ip.orders-management-vm-public-ip.domain_name_label}.${var.location}.cloudapp.azure.com"
 }
 
+output "orders_app_admin_password" {
+  value = random_string.orders_app_admin_password.result
+}
+
+output "orders_db_password" {
+  value = random_string.orders_db_password.result
+}
+
 output "client_certificate" {
   value     = azurerm_kubernetes_cluster.orders-k8s.kube_config[0].client_certificate
   sensitive = true

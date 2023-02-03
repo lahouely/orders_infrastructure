@@ -83,6 +83,7 @@ resource "azurerm_subnet" "orders-aks-vnet-default-subnet" {
   virtual_network_name = azurerm_virtual_network.orders-aks-vnet.name
   address_prefixes     = ["10.1.0.0/24"]
   resource_group_name  = azurerm_resource_group.orders-network-rg.name
+  service_endpoints    = ["Microsoft.Storage"]
   depends_on = [
     azurerm_virtual_network.orders-aks-vnet
   ]
@@ -122,8 +123,8 @@ resource "azurerm_subnet" "orders-db-vnet-management-subnet" {
 
 variable "orders-public-nsg-ports" {
   default = [
-    { "name" = "SSH",   "port" = 22,  "priority" = 100 },
-    { "name" = "HTTP",  "port" = 80,  "priority" = 101 },
+    { "name" = "SSH", "port" = 22, "priority" = 100 },
+    { "name" = "HTTP", "port" = 80, "priority" = 101 },
     { "name" = "HTTPS", "port" = 443, "priority" = 102 }
   ]
 }
@@ -132,11 +133,11 @@ resource "azurerm_network_security_group" "orders-public-nsg" {
   name                = "${var.location}-${var.environment}-orders-public-nsg"
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-network-rg.name
-  
+
   dynamic "security_rule" {
     iterator = item
-		for_each = var.orders-public-nsg-ports
-		content {
+    for_each = var.orders-public-nsg-ports
+    content {
       name                       = item.value.name
       priority                   = item.value.priority
       direction                  = "Inbound"
