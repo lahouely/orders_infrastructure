@@ -4,10 +4,10 @@ resource "azurerm_resource_group" "orders-db-rg" {
 }
 
 resource "azurerm_mysql_flexible_server" "orders-db-mysql-flexible-server" {
-  name                   = "orders-db-mysql-flexible-server"
-  resource_group_name    = azurerm_resource_group.orders-db-rg.name
-  location               = var.location
-  zone                   = 2
+  name                = "orders-db-mysql-flexible-server"
+  resource_group_name = azurerm_resource_group.orders-db-rg.name
+  location            = var.location
+  //zone                   = 2
   administrator_login    = var.admin_user
   administrator_password = var.db_password
   backup_retention_days  = 7
@@ -19,6 +19,10 @@ resource "azurerm_mysql_flexible_server" "orders-db-mysql-flexible-server" {
     iops              = 360
     size_gb           = 20
   }
+  lifecycle {
+    ignore_changes = [zone]
+  }
+
   depends_on = [azurerm_private_dns_zone_virtual_network_link.orders-db-private-dns-zone-vnet-link]
 }
 

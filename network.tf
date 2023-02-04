@@ -8,6 +8,9 @@ resource "azurerm_virtual_network" "orders-loadbalancer-vnet" {
   address_space       = ["10.0.0.0/16"]
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-network-rg.name
+  depends_on = [
+    azurerm_resource_group.orders-network-rg
+  ]
 }
 
 resource "azurerm_virtual_network" "orders-aks-vnet" {
@@ -15,6 +18,9 @@ resource "azurerm_virtual_network" "orders-aks-vnet" {
   address_space       = ["10.1.0.0/16"]
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-network-rg.name
+  depends_on = [
+    azurerm_resource_group.orders-network-rg
+  ]
 }
 
 resource "azurerm_virtual_network" "orders-db-vnet" {
@@ -22,6 +28,9 @@ resource "azurerm_virtual_network" "orders-db-vnet" {
   address_space       = ["10.2.0.0/16"]
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-network-rg.name
+  depends_on = [
+    azurerm_resource_group.orders-network-rg
+  ]
 }
 
 resource "azurerm_virtual_network" "orders-storage-vnet" {
@@ -29,6 +38,9 @@ resource "azurerm_virtual_network" "orders-storage-vnet" {
   address_space       = ["10.3.0.0/16"]
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-network-rg.name
+  depends_on = [
+    azurerm_resource_group.orders-network-rg
+  ]
 }
 
 resource "azurerm_virtual_network_peering" "aks-loadbalancer-peering" {
@@ -150,11 +162,12 @@ resource "azurerm_subnet" "orders-db-vnet-management-subnet" {
 }
 
 resource "azurerm_subnet" "orders-storage-vnet-default-subnet" {
-  name                 = "${var.location}-${var.environment}-orders-storage-vnet-default-subnet"
-  virtual_network_name = azurerm_virtual_network.orders-storage-vnet.name
-  address_prefixes     = ["10.3.0.0/24"]
-  resource_group_name  = azurerm_resource_group.orders-network-rg.name
-  service_endpoints    = ["Microsoft.Storage"]
+  name                                      = "${var.location}-${var.environment}-orders-storage-vnet-default-subnet"
+  virtual_network_name                      = azurerm_virtual_network.orders-storage-vnet.name
+  address_prefixes                          = ["10.3.0.0/24"]
+  resource_group_name                       = azurerm_resource_group.orders-network-rg.name
+  service_endpoints                         = ["Microsoft.Storage"]
+  private_endpoint_network_policies_enabled = true
   depends_on = [
     azurerm_virtual_network.orders-storage-vnet
   ]
@@ -189,6 +202,10 @@ resource "azurerm_network_security_group" "orders-public-nsg" {
       destination_address_prefix = "*"
     }
   }
+
+  depends_on = [
+    azurerm_resource_group.orders-network-rg
+  ]
 }
 
 resource "azurerm_public_ip" "orders-loadbalancer-vm-public-ip" {
@@ -197,6 +214,9 @@ resource "azurerm_public_ip" "orders-loadbalancer-vm-public-ip" {
   domain_name_label   = var.domain_name_label
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-network-rg.name
+  depends_on = [
+    azurerm_resource_group.orders-network-rg
+  ]
 }
 
 resource "azurerm_network_interface" "orders-loadbalancer-vm-public-nic" {
@@ -210,11 +230,18 @@ resource "azurerm_network_interface" "orders-loadbalancer-vm-public-nic" {
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.orders-loadbalancer-vm-public-ip.id
   }
+  depends_on = [
+    azurerm_resource_group.orders-network-rg
+  ]
 }
 
 resource "azurerm_network_interface_security_group_association" "orders-public-nsg-lb-nic-association" {
   network_interface_id      = azurerm_network_interface.orders-loadbalancer-vm-public-nic.id
   network_security_group_id = azurerm_network_security_group.orders-public-nsg.id
+  depends_on = [
+    azurerm_network_interface.orders-loadbalancer-vm-public-nic,
+    azurerm_network_security_group.orders-public-nsg
+  ]
 }
 
 resource "azurerm_public_ip" "orders-management-vm-public-ip" {
@@ -223,6 +250,9 @@ resource "azurerm_public_ip" "orders-management-vm-public-ip" {
   domain_name_label   = "${var.domain_name_label}-db"
   location            = var.location
   resource_group_name = azurerm_resource_group.orders-network-rg.name
+  depends_on = [
+    azurerm_resource_group.orders-network-rg
+  ]
 }
 
 
@@ -237,16 +267,27 @@ resource "azurerm_network_interface" "orders-management-vm-public-nic" {
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.orders-management-vm-public-ip.id
   }
+  depends_on = [
+    azurerm_subnet.orders-db-vnet-management-subnet,
+    azurerm_public_ip.orders-management-vm-public-ip
+  ]
 }
 
 resource "azurerm_network_interface_security_group_association" "orders-public-nsg-management-vm-nic-association" {
   network_interface_id      = azurerm_network_interface.orders-management-vm-public-nic.id
   network_security_group_id = azurerm_network_security_group.orders-public-nsg.id
+  depends_on = [
+    azurerm_network_interface.orders-management-vm-public-nic,
+    azurerm_network_security_group.orders-public-nsg
+  ]
 }
 
 resource "azurerm_private_dns_zone" "orders-db-private-dns-zone" {
   name                = "orders-db-private-dns-zone.mysql.database.azure.com"
   resource_group_name = azurerm_resource_group.orders-network-rg.name
+  depends_on = [
+    azurerm_resource_group.orders-network-rg
+  ]
 }
 
 resource "azurerm_private_dns_zone_virtual_network_link" "orders-db-private-dns-zone-vnet-link" {
@@ -269,4 +310,20 @@ resource "azurerm_private_dns_zone_virtual_network_link" "orders-aks-private-dns
     azurerm_private_dns_zone.orders-db-private-dns-zone,
     azurerm_virtual_network.orders-aks-vnet
   ]
+}
+
+resource "azurerm_private_endpoint" "orders-nfs-storage-private-endpoint" {
+  name                = "${var.location}-${var.environment}-orders-nfs-storage-private-endpoint"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.orders-network-rg.name
+  subnet_id           = azurerm_subnet.orders-storage-vnet-default-subnet.id
+
+  custom_network_interface_name = "${var.location}-${var.environment}-orders-nfs-storage-private-endpoint-nic"
+  private_service_connection {
+    name                           = "${var.location}-${var.environment}-orders-nfs-storage-private-endpoint-private-service-connection"
+    is_manual_connection           = false
+    private_connection_resource_id = azurerm_storage_account.orders-storage-account.id
+    subresource_names              = ["file"]
+  }
+
 }

@@ -1,44 +1,3 @@
-/*resource "kubernetes_secret" "orders-storage-account-secret" {
-  metadata {
-    name = "orders-storage-account-secret"
-  }
-
-  type = "Opaque"
-
-  data = {
-    ".dockerconfigjson" = jsonencode({
-      auths = {
-        "${var.registry_server}" = {
-          "username" = var.registry_username
-          "password" = var.registry_password
-          "email"    = var.registry_email
-          "auth"     = base64encode("${var.registry_username}:${var.registry_password}")
-        }
-      }
-    })
-  }
-}
-
-resource "kubernetes_persistent_volume" "orders-sessions-pv" {
-  metadata {
-    name = "orders-sessions-pv"
-  }
-  spec {
-    capacity = {
-      storage = "1Gi"
-    }
-    access_modes = ["ReadWriteMany"]
-    persistent_volume_source {
-      azure_file {
-        //read_only = false
-        secret_name = 
-        //secret_namespace =
-        share_name = azurerm_storage_share.orders-storage-sessions-share.name
-      }
-    }
-  }
-}*/
-
 resource "kubernetes_deployment" "orders-webapp-deployment" {
   metadata {
     name = "orders-webapp-deployment"
@@ -64,7 +23,7 @@ resource "kubernetes_deployment" "orders-webapp-deployment" {
       }
       spec {
         container {
-          image = "lahouely/orders_webserver:0.1.2"
+          image = "lahouely/orders_webserver:0.1.4"
           name  = "webapp"
 
           port {
@@ -81,10 +40,39 @@ resource "kubernetes_deployment" "orders-webapp-deployment" {
               memory = "50Mi"
             }
           }
+
+          volume_mount {
+            mount_path = "/tmp/sessions"
+            name       = kubernetes_persistent_volume_claim.orders-nfs-pvc-sessions.metadata.0.name
+          }
+
+          volume_mount {
+            mount_path = "/var/www/html/cv"
+            name       = kubernetes_persistent_volume_claim.orders-nfs-pvc-resumes.metadata.0.name
+          }
+        }
+
+        volume {
+          name = kubernetes_persistent_volume_claim.orders-nfs-pvc-sessions.metadata.0.name
+          persistent_volume_claim {
+            claim_name = kubernetes_persistent_volume_claim.orders-nfs-pvc-sessions.metadata.0.name
+          }
+        }
+
+        volume {
+          name = kubernetes_persistent_volume_claim.orders-nfs-pvc-resumes.metadata.0.name
+          persistent_volume_claim {
+            claim_name = kubernetes_persistent_volume_claim.orders-nfs-pvc-resumes.metadata.0.name
+          }
         }
       }
     }
   }
+  depends_on = [
+    azurerm_kubernetes_cluster.orders-k8s,
+    kubernetes_persistent_volume_claim.orders-nfs-pvc-sessions,
+    kubernetes_persistent_volume_claim.orders-nfs-pvc-resumes
+  ]
 }
 
 resource "kubernetes_service" "orders-webapp-service" {
@@ -105,4 +93,8 @@ resource "kubernetes_service" "orders-webapp-service" {
 
     type = "LoadBalancer"
   }
+  depends_on = [
+    azurerm_kubernetes_cluster.orders-k8s,
+    kubernetes_deployment.orders-webapp-deployment
+  ]
 }

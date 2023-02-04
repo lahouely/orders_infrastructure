@@ -5,28 +5,31 @@ resource "azurerm_resource_group" "orders-storage-rg" {
 
 
 resource "azurerm_storage_account" "orders-storage-account" {
-  name     = "orders${random_string.orders_storage_account_name.id}"
-  resource_group_name = azurerm_resource_group.orders-storage-rg.name
-  location                 = var.location
-  account_tier             = "Premium"
-  account_replication_type = "LRS"
-  account_kind             = "FileStorage"
+  name                      = "orders${random_string.orders_storage_account_name.id}"
+  resource_group_name       = azurerm_resource_group.orders-storage-rg.name
+  location                  = var.location
+  account_tier              = "Premium"
+  account_replication_type  = "LRS"
+  account_kind              = "FileStorage"
   enable_https_traffic_only = false
   network_rules {
     //default_action             = "Deny"
     default_action             = "Allow"
-    bypass = ["AzureServices"]
+    bypass                     = ["AzureServices"]
     virtual_network_subnet_ids = [azurerm_subnet.orders-aks-vnet-default-subnet.id]
   }
+  depends_on = [
+    azurerm_resource_group.orders-storage-rg
+  ]
 }
 
-resource "azurerm_storage_share" "orders-storage-sessions-share" {
-  name                 = "orders-storage-sessions-share"
+resource "azurerm_storage_share" "orders-storage-nfs-share-sessions" {
+  name                 = "orders-storage-nfs-share-sessions"
   storage_account_name = azurerm_storage_account.orders-storage-account.name
   enabled_protocol     = "NFS"
   quota                = 100
 
-  acl {
+  /*acl {
     id = "MTIzNDU2Nzg5MDEyszQ1zjc4OTAxMjM0NTY3ODkwMTI"
 
     access_policy {
@@ -34,59 +37,119 @@ resource "azurerm_storage_share" "orders-storage-sessions-share" {
       start       = "2019-07-02T09:38:21.0000000Z"
       expiry      = "2033-07-02T10:38:21.0000000Z"
     }
-  }
+  }*/
 
   depends_on = [
     azurerm_storage_account.orders-storage-account
   ]
 }
 
-/*resource "kubernetes_storage_class" "example" {
-  metadata {
-    name = "terraform-example"
-  }
-  storage_provisioner = "file.csi.azure.com"
-  reclaim_policy      = "Retain"
-  allow_volume_expansion = false
-  parameters = {
-    type = "pd-standard"
-  }
-  mount_options = ["file_mode=0700", "dir_mode=0777", "mfsymlinks", "uid=1000", "gid=1000", "nobrl", "cache=none"]
-}*/
+resource "azurerm_storage_share" "orders-storage-nfs-share-resumes" {
+  name                 = "orders-storage-nfs-share-resumes"
+  storage_account_name = azurerm_storage_account.orders-storage-account.name
+  enabled_protocol     = "NFS"
+  quota                = 100
 
-resource "kubernetes_persistent_volume" "example" {
+  /*acl {
+    id = "MTIzNDU2Nzg5MDEyszQ1zjc4OTAxMjM0NTY3ODkwMTI"
+
+    access_policy {
+      permissions = "rwdl"
+      start       = "2019-07-02T09:38:21.0000000Z"
+      expiry      = "2033-07-02T10:38:21.0000000Z"
+    }
+  }*/
+
+  depends_on = [
+    azurerm_storage_account.orders-storage-account
+  ]
+}
+
+
+resource "kubernetes_persistent_volume" "orders-nfs-pv-sessions" {
   metadata {
-    name = "example"
+    name = "orders-nfs-pv-sessions"
   }
   spec {
-    storage_class_name = "manual"
-    access_modes = ["ReadWriteMany"]
+    storage_class_name               = "manual"
+    access_modes                     = ["ReadWriteMany"]
     persistent_volume_reclaim_policy = "Delete"
     capacity = {
       storage = "10Gi"
     }
-    
+
     persistent_volume_source {
       nfs {
-        server = "10.3.0.4"
-        path = "/orders99zz19/orders-storage-sessions-share/"
+        server = azurerm_private_endpoint.orders-nfs-storage-private-endpoint.private_service_connection.0.private_ip_address
+        path   = "/${azurerm_storage_account.orders-storage-account.name}/${azurerm_storage_share.orders-storage-nfs-share-sessions.name}/"
       }
     }
   }
+  depends_on = [
+    azurerm_storage_share.orders-storage-nfs-share-sessions
+  ]
 }
 
-resource "kubernetes_persistent_volume_claim" "example" {
+resource "kubernetes_persistent_volume" "orders-nfs-pv-resumes" {
   metadata {
-    name = "exampleclaimname"
+    name = "orders-nfs-pv-resumes"
+  }
+  spec {
+    storage_class_name               = "manual"
+    access_modes                     = ["ReadWriteMany"]
+    persistent_volume_reclaim_policy = "Delete"
+    capacity = {
+      storage = "10Gi"
+    }
+
+    persistent_volume_source {
+      nfs {
+        server = azurerm_private_endpoint.orders-nfs-storage-private-endpoint.private_service_connection.0.private_ip_address
+        path   = "/${azurerm_storage_account.orders-storage-account.name}/${azurerm_storage_share.orders-storage-nfs-share-resumes.name}/"
+      }
+    }
+  }
+  depends_on = [
+    azurerm_storage_share.orders-storage-nfs-share-resumes
+  ]
+}
+
+resource "kubernetes_persistent_volume_claim" "orders-nfs-pvc-sessions" {
+  metadata {
+    name = "orders-nfs-pvc-sessions"
   }
   spec {
     storage_class_name = "manual"
-    access_modes = ["ReadWriteMany"]
+    access_modes       = ["ReadWriteMany"]
     resources {
       requests = {
-        storage = "1Gi"
+        storage = "10Gi"
       }
     }
-    volume_name = "${kubernetes_persistent_volume.example.metadata.0.name}"
+    volume_name = kubernetes_persistent_volume.orders-nfs-pv-sessions.metadata.0.name
   }
+  depends_on = [
+    kubernetes_persistent_volume.orders-nfs-pv-sessions
+  ]
 }
+
+
+resource "kubernetes_persistent_volume_claim" "orders-nfs-pvc-resumes" {
+  metadata {
+    name = "orders-nfs-pvc-resumes"
+  }
+  spec {
+    storage_class_name = "manual"
+    access_modes       = ["ReadWriteMany"]
+    resources {
+      requests = {
+        storage = "10Gi"
+      }
+    }
+    volume_name = kubernetes_persistent_volume.orders-nfs-pv-resumes.metadata.0.name
+  }
+  depends_on = [
+    kubernetes_persistent_volume.orders-nfs-pv-resumes
+  ]
+}
+

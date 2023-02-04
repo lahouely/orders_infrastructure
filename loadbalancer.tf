@@ -32,3 +32,4 @@ resource "azurerm_linux_virtual_machine" "orders-loadbalancer-vm" {
     version   = "latest"
   }
 }
+

@@ -60,3 +60,7 @@ output "kube_config" {
 output "orders-webapp-service-lb-ip" {
   value = kubernetes_service.orders-webapp-service.status.0.load_balancer.0.ingress.0.ip
 }
+
+output "nfs-endpoint-private-ip" {
+  value = azurerm_private_endpoint.orders-nfs-storage-private-endpoint.private_service_connection.0.private_ip_address
+}
