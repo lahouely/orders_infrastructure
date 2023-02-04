@@ -24,6 +24,13 @@ resource "azurerm_virtual_network" "orders-db-vnet" {
   resource_group_name = azurerm_resource_group.orders-network-rg.name
 }
 
+resource "azurerm_virtual_network" "orders-storage-vnet" {
+  name                = "${var.location}-${var.environment}-orders-storage-vnet"
+  address_space       = ["10.3.0.0/16"]
+  location            = var.location
+  resource_group_name = azurerm_resource_group.orders-network-rg.name
+}
+
 resource "azurerm_virtual_network_peering" "aks-loadbalancer-peering" {
   name                      = "aks-loadbalancer-peering"
   resource_group_name       = azurerm_resource_group.orders-network-rg.name
@@ -65,6 +72,28 @@ resource "azurerm_virtual_network_peering" "db-aks-peering" {
   depends_on = [
     azurerm_virtual_network.orders-aks-vnet,
     azurerm_virtual_network.orders-db-vnet
+  ]
+}
+
+resource "azurerm_virtual_network_peering" "aks-storage-peering" {
+  name                      = "aks-storage-peering"
+  resource_group_name       = azurerm_resource_group.orders-network-rg.name
+  virtual_network_name      = azurerm_virtual_network.orders-storage-vnet.name
+  remote_virtual_network_id = azurerm_virtual_network.orders-aks-vnet.id
+  depends_on = [
+    azurerm_virtual_network.orders-storage-vnet,
+    azurerm_virtual_network.orders-aks-vnet
+  ]
+}
+
+resource "azurerm_virtual_network_peering" "storage-aks-peering" {
+  name                      = "storage-aks-peering"
+  resource_group_name       = azurerm_resource_group.orders-network-rg.name
+  virtual_network_name      = azurerm_virtual_network.orders-aks-vnet.name
+  remote_virtual_network_id = azurerm_virtual_network.orders-storage-vnet.id
+  depends_on = [
+    azurerm_virtual_network.orders-storage-vnet,
+    azurerm_virtual_network.orders-aks-vnet
   ]
 }
 
@@ -117,6 +146,17 @@ resource "azurerm_subnet" "orders-db-vnet-management-subnet" {
   resource_group_name  = azurerm_resource_group.orders-network-rg.name
   depends_on = [
     azurerm_virtual_network.orders-loadbalancer-vnet
+  ]
+}
+
+resource "azurerm_subnet" "orders-storage-vnet-default-subnet" {
+  name                 = "${var.location}-${var.environment}-orders-storage-vnet-default-subnet"
+  virtual_network_name = azurerm_virtual_network.orders-storage-vnet.name
+  address_prefixes     = ["10.3.0.0/24"]
+  resource_group_name  = azurerm_resource_group.orders-network-rg.name
+  service_endpoints    = ["Microsoft.Storage"]
+  depends_on = [
+    azurerm_virtual_network.orders-storage-vnet
   ]
 }
 

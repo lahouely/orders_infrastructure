@@ -21,7 +21,7 @@ variable "cloudflare_email" {}
 variable "cloudflare_zone_id" {}
 
 variable "domain_name_label" {
-  default = "bendebbaghhhh"
+  default = "bendebbh"
 }
 
 variable "location" {

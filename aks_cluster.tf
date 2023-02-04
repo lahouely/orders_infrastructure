@@ -12,7 +12,7 @@ resource "azurerm_kubernetes_cluster" "orders-k8s" {
   node_resource_group = "${var.location}-${var.environment}-orders-k8s-managed-cluster-rg"
   default_node_pool {
     name           = "nodepool"
-    vm_size        = "Standard_B2s"
+    vm_size        = "Standard_B2ms"
     node_count     = var.node_count
     vnet_subnet_id = azurerm_subnet.orders-aks-vnet-default-subnet.id
   }

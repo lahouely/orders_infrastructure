@@ -1,5 +1,5 @@
 resource "random_string" "orders_storage_account_name" {
-  length  = 4
+  length  = 6
   upper   = false
   special = false
 }
