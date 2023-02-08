@@ -21,16 +21,14 @@ variable "cloudflare_email" {}
 variable "cloudflare_zone_id" {}
 
 variable "domain_name_label" {
-  default = "bendebbh"
+  description = "a label that will be used to make an FQDN"
 }
 
 variable "location" {
-  default     = "centralindia"
-  description = "location set to centralindia for cost-effectiveness"
+  description = "location can be set to centralindia for cost-effectiveness"
 }
 
 variable "environment" {
-  default     = "dev"
   description = "this variable is used to track the environment: dev, test, prod..."
 }
 
