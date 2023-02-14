@@ -1,0 +1,20 @@
+#!/bin/bash
+# this script creates db schema and fills the tables wil some inital data.
+
+sudo su - 
+apt update
+apt install mysql-client-5.7 -y
+
+curl https://raw.githubusercontent.com/lahouely/orders_db_scripts/main/base.sql > base.sql
+
+mysql -h orders-db-mysql-flexible-server.mysql.database.azure.com -u youcef --password=${orders_db_password} orders-db < base.sql
+#rm -f base.sql
+
+cat <<EOF > tmp.sql
+INSERT INTO \`systeme\` (\`param\`, \`val\`) VALUES ('mdpadmin', '${orders_app_admin_password_md5}');
+EOF
+
+cp tmp.sql /tmp/tmp.sql
+
+mysql -h orders-db-mysql-flexible-server.mysql.database.azure.com -u youcef --password=${orders_db_password} orders-db < tmp.sql
+#rm -f tmp.sql

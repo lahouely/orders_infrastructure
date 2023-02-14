@@ -10,6 +10,18 @@ output "to-connect-to-the-loadbalancer-vm-via-ssh" {
   value = "ssh -i ${replace(var.admin_public_key_path, "/[.]pub$/", "")} ${var.admin_user}@${azurerm_public_ip.orders-loadbalancer-vm-public-ip.domain_name_label}.${var.location}.cloudapp.azure.com"
 }
 
+output "to-connect-to-the-db-management-vm-via-ssh" {
+  value = "ssh -i ${replace(var.admin_public_key_path, "/[.]pub$/", "")} ${var.admin_user}@${azurerm_public_ip.orders-management-vm-public-ip.domain_name_label}.${var.location}.cloudapp.azure.com"
+}
+
+output "orders_app_admin_password" {
+  value = random_string.orders_app_admin_password.result
+}
+
+output "orders_db_password" {
+  value = random_string.orders_db_password.result
+}
+
 output "client_certificate" {
   value     = azurerm_kubernetes_cluster.orders-k8s.kube_config[0].client_certificate
   sensitive = true
@@ -47,4 +59,8 @@ output "kube_config" {
 
 output "orders-webapp-service-lb-ip" {
   value = kubernetes_service.orders-webapp-service.status.0.load_balancer.0.ingress.0.ip
+}
+
+output "nfs-endpoint-private-ip" {
+  value = azurerm_private_endpoint.orders-nfs-storage-private-endpoint.private_service_connection.0.private_ip_address
 }

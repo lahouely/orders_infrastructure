@@ -10,6 +10,8 @@ variable "admin_user" {}
 
 variable "db_password" {}
 
+variable "app_admin_password" {}
+
 variable "admin_public_key_path" {}
 
 variable "cloudflare_api_key" {}
@@ -19,16 +21,14 @@ variable "cloudflare_email" {}
 variable "cloudflare_zone_id" {}
 
 variable "domain_name_label" {
-  default = "boston-dynamics"
+  description = "a label that will be used to make an FQDN"
 }
 
 variable "location" {
-  default     = "centralindia"
-  description = "location set to centralindia for cost-effectiveness"
+  description = "location can be set to centralindia for cost-effectiveness"
 }
 
 variable "environment" {
-  default     = "dev"
   description = "this variable is used to track the environment: dev, test, prod..."
 }
 

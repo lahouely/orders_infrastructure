@@ -1,6 +1,6 @@
 resource "azurerm_resource_group" "orders-common-rg" {
   location = var.location
-  name     = join("-", [var.location, var.environment, "orders-common-rg"])
+  name     = "${var.location}-${var.environment}-orders-common-rg"
 }
 
 resource "azurerm_ssh_public_key" "admin-public-key" {

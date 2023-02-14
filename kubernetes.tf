@@ -7,7 +7,7 @@ resource "kubernetes_deployment" "orders-webapp-deployment" {
   }
 
   spec {
-    replicas = 2
+    replicas = 3
     selector {
       match_labels = {
         app  = "webapp"
@@ -23,7 +23,7 @@ resource "kubernetes_deployment" "orders-webapp-deployment" {
       }
       spec {
         container {
-          image = "lahouely/orders_webserver:latest"
+          image = "lahouely/orders_webserver:0.1.5"
           name  = "webapp"
 
           port {
@@ -40,10 +40,39 @@ resource "kubernetes_deployment" "orders-webapp-deployment" {
               memory = "50Mi"
             }
           }
+
+          volume_mount {
+            mount_path = "/tmp/sessions"
+            name       = kubernetes_persistent_volume_claim.orders-nfs-pvc-sessions.metadata.0.name
+          }
+
+          volume_mount {
+            mount_path = "/var/www/html/cv"
+            name       = kubernetes_persistent_volume_claim.orders-nfs-pvc-resumes.metadata.0.name
+          }
+        }
+
+        volume {
+          name = kubernetes_persistent_volume_claim.orders-nfs-pvc-sessions.metadata.0.name
+          persistent_volume_claim {
+            claim_name = kubernetes_persistent_volume_claim.orders-nfs-pvc-sessions.metadata.0.name
+          }
+        }
+
+        volume {
+          name = kubernetes_persistent_volume_claim.orders-nfs-pvc-resumes.metadata.0.name
+          persistent_volume_claim {
+            claim_name = kubernetes_persistent_volume_claim.orders-nfs-pvc-resumes.metadata.0.name
+          }
         }
       }
     }
   }
+  depends_on = [
+    azurerm_kubernetes_cluster.orders-k8s,
+    kubernetes_persistent_volume_claim.orders-nfs-pvc-sessions,
+    kubernetes_persistent_volume_claim.orders-nfs-pvc-resumes
+  ]
 }
 
 resource "kubernetes_service" "orders-webapp-service" {
@@ -64,4 +93,8 @@ resource "kubernetes_service" "orders-webapp-service" {
 
     type = "LoadBalancer"
   }
+  depends_on = [
+    azurerm_kubernetes_cluster.orders-k8s,
+    kubernetes_deployment.orders-webapp-deployment
+  ]
 }
